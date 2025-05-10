@@ -6,37 +6,40 @@
 ******************************************************************************/
 
 #include <math.h>
-#include "pid_sca.h"
+#include "control-pid_sca.h"
 
 #define TIEMPO_MUESTREO    500
 #define MODELO_RESISTENCIA 1
 #define MODELO_CAPACIDAD   2
-#define KP                 1
-#define Ti                 10
-#define TD                 0
+#define OBJETIVO           10
+#define K_PROP             1
+#define T_INT              5
+#define T_DER              0
 #define SALIDA_MIN         0
-#define SALIDA_MAX         10
-#define LIMITAR_SALIDA     true
+#define SALIDA_MAX         20
 #define COMPENSAR_INTEGRAL true
 
-unsigned long TiempoInicial;
-unsigned long TiempoAnterior;
-controlPID Corriente(KP, Ti, TD);
-float VoltajeObjetivo      = 10;
-float VoltajeSimulado      = 0;
-float accionControl        = 0;
-float accionInt            = 0;
-float accionProp           = 0;
-float compensacion         = 0;
-int calculoActuador        = 0;
+controlPID    Carga (SIN_SALIDA);
+pid_config_s  ConfiguracionPID = {0};
+pid_info_s    InformePID       = {0};
+float         VoltajeSimulado  = 0;
+float         AccionControl    = 0;
+unsigned long TiempoInicial    = 0;
+unsigned long TiempoAnterior   = 0;
 
 //*****************************************************************************
 
 void setup() {
   
-  // Limito la salida del actuador y seteo sus valores min y maximos
-  Corriente.LimitarSalida( LIMITAR_SALIDA, SALIDA_MIN, SALIDA_MAX );
-  Corriente.CompensarIntegral( COMPENSAR_INTEGRAL );
+  // Configura PID
+  ConfiguracionPID.Objetivo = OBJETIVO;
+  ConfiguracionPID.Kp       = K_PROP;
+  ConfiguracionPID.Ti       = T_INT;
+  ConfiguracionPID.Td       = T_DER;
+  ConfiguracionPID.LimiteSuperior    = SALIDA_MAX;
+  ConfiguracionPID.LimiteInferior    = SALIDA_MIN; 
+  ConfiguracionPID.CompensarIntegral = COMPENSAR_INTEGRAL;
+  Carga.Configurar( ConfiguracionPID );
   
   // Presentación inicial de información
   Serial.begin(9600);
@@ -58,25 +61,22 @@ void loop() {
   } while (millis() < (TiempoAnterior + TIEMPO_MUESTREO));
   TiempoAnterior = TiempoAnterior + TIEMPO_MUESTREO;
 
-  // Pasado el intervalo deltaT, mido, calculo control y actúo.
+  // Pasado el intervalo TIEMPO_MUESTREO: mido, calculo control y actúo.
 
   // 1) LEEMOS MODELO ---------------------------------------------------------
-  VoltajeSimulado = sistemaSimulado( accionControl ); 
+  VoltajeSimulado = sistemaSimulado( AccionControl ); 
   
   // 2) CALCULO ACCION DE CONTROL ---------------------------------------------
-  accionControl = Corriente.Controlar( VoltajeObjetivo - VoltajeSimulado ); 
+  AccionControl = Carga.Controlar( VoltajeSimulado ); 
  
   // 3) ACTUAR ----------------------------------------------------------------
-  VoltajeSimulado = sistemaSimulado(accionControl); 
-     // esto en realidad no hace nada porque es un sistema simulado
+  VoltajeSimulado = sistemaSimulado( AccionControl ); 
+  // esto en realidad no hace nada porque es un sistema simulado
     
   // 4) MOSTRAR VALORES -------------------------------------------------------
-  accionInt = Corriente.ObtenerIntegral();
-  accionProp = Corriente.ObtenerProporcional();
-  compensacion = Corriente.ObtenerCompensacion();
-  
-  // Enviar información:
+  Carga.Leer( &InformePID );
   mostrar();
+
 }
 
 //*****************************************************************************
@@ -85,17 +85,17 @@ void mostrar()
 {
   Serial.print(TiempoAnterior-TiempoInicial);
   Serial.print("\t");
-  Serial.print(VoltajeObjetivo);
+  Serial.print(ConfiguracionPID.Objetivo);
   Serial.print("\t");
   Serial.print(VoltajeSimulado);
   Serial.print("\t");
-  Serial.print(accionControl);
+  Serial.print(AccionControl);
   Serial.print("\t");
-  Serial.print(accionProp);
+  Serial.print(InformePID.ComponenteProporcional);
   Serial.print("\t");
-  Serial.print(accionInt);
+  Serial.print(InformePID.ComponenteIntegral);
   Serial.print("\t");
-  Serial.println(compensacion);
+  Serial.println(InformePID.Compensacion);
 }
 
 //*****************************************************************************
