@@ -26,31 +26,34 @@ controlPID::controlPID(uint8_t PIN_SALIDA)
    Admin = {};                         // Valores de administración reseteados.
    Configuracion = {};                 // Configuración reseteada.
    Configuracion.Kp = 1;               // Valor predeterminado (resto dejamos en 0).
-   Configurar(Configuracion);          // Innecesario pero conveniente.
+   Configurar(&Configuracion);          // Innecesario pero conveniente.
 }
 
 //-------------------------------------------------------------------------------------------------
 
-void controlPID::Configurar(pid_config_s CONFIG)
+void controlPID::Configurar(pid_config_s * CONFIG)
 // Configura todos los parámetros.
 // Kp puede ser negativo.
 // Si Ti=0, el PID no lo tomará en cuenta.
 // Si Td=0, el PID no lo tomará en cuenta.
 {  
    // Cargamos configuracion:
-   Configuracion.Objetivo          = CONFIG.Objetivo;
-   Configuracion.Kp                = CONFIG.Kp;
-   Configuracion.Ti                = CONFIG.Ti;
-   Configuracion.Td                = CONFIG.Td;
-   Configuracion.LimiteSuperior    = CONFIG.LimiteSuperior;
-   Configuracion.LimiteInferior    = CONFIG.LimiteInferior;
-   Configuracion.CompensarIntegral = CONFIG.CompensarIntegral;
+   Configuracion.Objetivo          = CONFIG->Objetivo;
+   Configuracion.Kp                = CONFIG->Kp;
+   Configuracion.Ti                = CONFIG->Ti;
+   Configuracion.Td                = CONFIG->Td;
+   Configuracion.LimiteSuperior    = CONFIG->LimiteSuperior;
+   Configuracion.LimiteInferior    = CONFIG->LimiteInferior;
+   Configuracion.CompensarIntegral = CONFIG->CompensarIntegral;
 
    // Verificaciones:
    if (Configuracion.LimiteSuperior < Configuracion.LimiteInferior) {
       float SW = Configuracion.LimiteSuperior;
       Configuracion.LimiteSuperior = Configuracion.LimiteInferior;
       Configuracion.LimiteInferior = SW;
+      // Corregimos CONFIG
+      CONFIG->LimiteSuperior = Configuracion.LimiteSuperior;
+      CONFIG->LimiteInferior = Configuracion.LimiteInferior;
    }
    if ( Configuracion.LimiteSuperior == Configuracion.LimiteInferior) {
       LimitarSalida = false;
@@ -58,6 +61,8 @@ void controlPID::Configurar(pid_config_s CONFIG)
       LimitarSalida = true;
    }
    CompensarIntegral(Configuracion.CompensarIntegral);
+   // Corregimos CONFIG si CompensarIntegral fue modificado:
+   CONFIG->CompensarIntegral = Configuracion.CompensarIntegral;  
 
    // Resetea valores de integración (aunque mantiene ComponenteIntegral)
    TiempoAnterior       = 0;

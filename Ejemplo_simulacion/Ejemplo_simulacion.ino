@@ -12,14 +12,14 @@
 #define MODELO_RESISTENCIA 1
 #define MODELO_CAPACIDAD   2
 #define OBJETIVO           10
-#define K_PROP             1
-#define T_INT              5
+#define K_PROP             5
+#define T_INT              4
 #define T_DER              0
 #define SALIDA_MIN         0
 #define SALIDA_MAX         20
-#define COMPENSAR_INTEGRAL true
+#define COMPENSAR_INTEGRAL_AFIRMATIVO true
 
-controlPID    Carga (SIN_SALIDA);
+controlPID    Carga (PID_SIN_SALIDA);
 pid_config_s  ConfiguracionPID = {0};
 pid_info_s    InformePID       = {0};
 float         VoltajeSimulado  = 0;
@@ -38,8 +38,8 @@ void setup() {
   ConfiguracionPID.Td       = T_DER;
   ConfiguracionPID.LimiteSuperior    = SALIDA_MAX;
   ConfiguracionPID.LimiteInferior    = SALIDA_MIN; 
-  ConfiguracionPID.CompensarIntegral = COMPENSAR_INTEGRAL;
-  Carga.Configurar( ConfiguracionPID );
+  ConfiguracionPID.CompensarIntegral = COMPENSAR_INTEGRAL_AFIRMATIVO;
+  Carga.Configurar( &ConfiguracionPID );
   
   // Presentación inicial de información
   Serial.begin(9600);

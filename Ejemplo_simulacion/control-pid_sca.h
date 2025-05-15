@@ -17,7 +17,7 @@
 #ifndef CONTROL_PID_SCA_H
 #define CONTROL_PID_SCA_H
 
-#define SIN_SALIDA 0
+#define PID_SIN_SALIDA 0
 
 struct pid_config_s {
    float Objetivo;            // Salida Objetivo del sistema.
@@ -58,8 +58,8 @@ class controlPID                          // Clase para control PID
    controlPID(uint8_t PIN_SALIDA);        // Constructor con PIN de salida.
                                           // - PIN_SALIDA debe ser un PWM válido de Arduino.
                                           // - Si PIN_SALIDA = 0, no modifica nivel de PWM.
-   void Configurar(pid_config_s CONFIG);  // Configura todos los parámetros.
-   void Obtener(pid_config_s * CONFIG);   // Obtiene los parámetros configurados.
+   void Configurar(pid_config_s *CONFIG); // Configura todos los parámetros.
+   void Obtener(pid_config_s *CONFIG);    // Obtiene los parámetros configurados.
    bool CompensarIntegral(bool COMPENSAR); 
                                           // Activa o desactiva la compansación de integración 
                                           // e indica si está activado:
